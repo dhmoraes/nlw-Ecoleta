@@ -16,13 +16,28 @@ interface IBGECityResponse {
 
 const Home = () => {
     const navigation = useNavigation();
-    const [uf, setUF] = useState('0');
-    const [city, setCity] = useState('0');
+    const [ufs, setUfs] = useState<string[]>([]);
+    const [cities, setCities] = useState<string[]>([]);
+    const [selectedUF, setSelectedUF] = useState('0');
+    const [selectedCity, setSelectedCity] = useState('0');
 
+    useEffect(() => {
+        axios.get<IBGEUFResponse[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados').then(response => {
+            const ufInitials = response.data.map(uf => uf.sigla);
+            setUfs(ufInitials.sort());
+        })
+    }, []);
+
+    useEffect(() => {
+        axios.get<IBGECityResponse[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUF}/municipios`).then(response => {
+            const cityNames = response.data.map(city => city.nome);
+            setCities(cityNames);
+        })
+    }, [selectedUF]);
 
     function handleNavigateToPoints() {
         navigation.navigate('Points', {
-            uf, city
+            selectedUF, selectedCity
         });
     }
 
@@ -41,21 +56,23 @@ const Home = () => {
                 </View>
 
                 <View style={styles.footer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Digite a UF"
-                        maxLength={2}
-                        autoCapitalize="characters"
-                        autoCorrect={false}
-                        value={uf}
-                        onChangeText={setUF}
+                    <RNPickerSelect
+                        placeholder={{
+                            label: 'Selecione um Estado'
+                        }}
+                        onValueChange={(value) => setSelectedUF(value)}
+                        items={ufs.map(uf => (
+                            { label: uf, value: uf }
+                        ))}
                     />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Digite a Cidade"
-                        autoCorrect={false}
-                        value={city}
-                        onChangeText={setCity}
+                    <RNPickerSelect
+                        placeholder={{
+                            label: 'Selecione uma Cidade'
+                        }}
+                        onValueChange={(value) => setSelectedCity(value)}
+                        items={cities.map(city => (
+                            { label: city, value: city }
+                        ))}
                     />
 
                     <RectButton style={styles.button} onPress={handleNavigateToPoints}>
